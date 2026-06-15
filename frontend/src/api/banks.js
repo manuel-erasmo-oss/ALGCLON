@@ -1,38 +1,28 @@
 import apiClient from './client';
 
-export const banksApi = {
-  getAll: async () => {
-    const response = await apiClient.get('/banks');
-    return response.data;
-  },
-
-  getById: async (id) => {
-    const response = await apiClient.get(`/banks/${id}`);
-    return response.data;
-  },
-
-  create: async (data) => {
-    const response = await apiClient.post('/banks', data);
-    return response.data;
-  },
-
-  update: async (id, data) => {
-    const response = await apiClient.put(`/banks/${id}`, data);
-    return response.data;
-  },
-
-  delete: async (id) => {
-    const response = await apiClient.delete(`/banks/${id}`);
-    return response.data;
-  },
-
-  getTransactions: async (bankId, params = {}) => {
-    const response = await apiClient.get(`/banks/${bankId}/transactions`, { params });
-    return response.data;
-  },
-
-  createTransaction: async (bankId, data) => {
-    const response = await apiClient.post(`/banks/${bankId}/transactions`, data);
-    return response.data;
-  },
+export const getAccounts = async () => {
+  const response = await apiClient.get('/banks');
+  return response.data;
 };
+
+export const getAccount = async (id) => {
+  const response = await apiClient.get(`/banks/${id}`);
+  return response.data;
+};
+
+export const createAccount = async (data) => {
+  const response = await apiClient.post('/banks', data);
+  return response.data;
+};
+
+export const getTransactions = async (accountId, params = {}) => {
+  const response = await apiClient.get(`/banks/${accountId}/transactions`, { params });
+  return response.data;
+};
+
+export const createTransaction = async (accountId, data) => {
+  const response = await apiClient.post(`/banks/${accountId}/transactions`, data);
+  return response.data;
+};
+
+export const banksApi = { getAccounts, getAccount, createAccount, getTransactions, createTransaction };
