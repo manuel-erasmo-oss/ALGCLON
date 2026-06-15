@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("ADMIN")
+  companyId String
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  nit         String?
+  address     String?
+  phone       String?
+  email       String?
+  logo        String?
+  taxRegime   String?  @default("SIMPLIFIED")
+  currency    String   @default("COP")
+  createdAt   DateTime @default(now())
+
+  users        User[]
+  contacts     Contact[]
+  products     Product[]
+  invoices     Invoice[]
+  accounts     Account[]
+  bankAccounts BankAccount[]
+  categories   Category[]
+  journalEntries JournalEntry[]
+  settings     Settings?
+}
+
+model Contact {
+  id             String   @id @default(cuid())
+  companyId      String
+  name           String
+  email          String?
+  phone          String?
+  type           String   @default("CLIENT")
+  identification String?
+  address        String?
+  city           String?
+  notes          String?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  company          Company           @relation(fields: [companyId], references: [id])
+  invoices         Invoice[]
+  bankTransactions BankTransaction[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  type      String   @default("PRODUCT")
+  createdAt DateTime @default(now())
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  description String?
+  price       Float    @default(0)
+  cost        Float    @default(0)
+  stock       Float    @default(0)
+  categoryId  String?
+  unit        String?  @default("UND")
+  taxRate     Float    @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  company      Company       @relation(fields: [companyId], references: [id])
+  category     Category?     @relation(fields: [categoryId], references: [id])
+  invoiceItems InvoiceItem[]
+}
+
+model Invoice {
+  id        String   @id @default(cuid())
+  companyId String
+  contactId String?
+  number    String
+  type      String   @default("INVOICE")
+  date      DateTime @default(now())
+  dueDate   DateTime?
+  status    String   @default("DRAFT")
+  subtotal  Float    @default(0)
+  taxAmount Float    @default(0)
+  total     Float    @default(0)
+  notes     String?
+  createdAt DateTime @default(now())
+
+  company  Company       @relation(fields: [companyId], references: [id])
+  contact  Contact?      @relation(fields: [contactId], references: [id])
+  items    InvoiceItem[]
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  productId   String?
+  description String
+  quantity    Float   @default(1)
+  price       Float   @default(0)
+  taxRate     Float   @default(0)
+  total       Float   @default(0)
+
+  invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+}
+
+model Account {
+  id        String  @id @default(cuid())
+  companyId String
+  code      String
+  name      String
+  type      String
+  parentId  String?
+  balance   Float   @default(0)
+  active    Boolean @default(true)
+
+  company            Company            @relation(fields: [companyId], references: [id])
+  parent             Account?           @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children           Account[]          @relation("AccountHierarchy")
+  journalEntryLines  JournalEntryLine[]
+}
+
+model JournalEntry {
+  id          String   @id @default(cuid())
+  companyId   String
+  date        DateTime @default(now())
+  description String
+  reference   String?
+  createdAt   DateTime @default(now())
+
+  company Company            @relation(fields: [companyId], references: [id])
+  lines   JournalEntryLine[]
+}
+
+model JournalEntryLine {
+  id          String  @id @default(cuid())
+  entryId     String
+  accountId   String
+  debit       Float   @default(0)
+  credit      Float   @default(0)
+  description String?
+
+  entry   JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  account Account      @relation(fields: [accountId], references: [id])
+}
+
+model BankAccount {
+  id            String   @id @default(cuid())
+  companyId     String
+  name          String
+  bank          String?
+  accountNumber String?
+  balance       Float    @default(0)
+  currency      String   @default("COP")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  company      Company           @relation(fields: [companyId], references: [id])
+  transactions BankTransaction[]
+}
+
+model BankTransaction {
+  id            String   @id @default(cuid())
+  bankAccountId String
+  date          DateTime @default(now())
+  description   String
+  amount        Float
+  type          String
+  reconciled    Boolean  @default(false)
+  reference     String?
+  contactId     String?
+  createdAt     DateTime @default(now())
+
+  bankAccount BankAccount @relation(fields: [bankAccountId], references: [id])
+  contact     Contact?    @relation(fields: [contactId], references: [id])
+}
+
+model Settings {
+  id                String @id @default(cuid())
+  companyId         String @unique
+  invoicePrefix     String @default("FV")
+  invoiceNextNumber Int    @default(1)
+  quotePrefix       String @default("CO")
+  quoteNextNumber   Int    @default(1)
+  defaultTaxRate    Float  @default(19)
+  fiscalYearStart   String @default("01-01")
+
+  company Company @relation(fields: [companyId], references: [id])
+}
