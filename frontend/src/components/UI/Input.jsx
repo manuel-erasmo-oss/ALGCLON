@@ -1,10 +1,10 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef } from 'react'
 
 export const Input = forwardRef(function Input(
   { label, error, helperText, className = '', id, type = 'text', ...props },
   ref
 ) {
-  const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+  const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined)
 
   return (
     <div className="w-full">
@@ -29,5 +29,7 @@ export const Input = forwardRef(function Input(
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
       {helperText && !error && <p className="mt-1 text-xs text-gray-500">{helperText}</p>}
     </div>
-  );
-});
+  )
+})
+
+export default Input

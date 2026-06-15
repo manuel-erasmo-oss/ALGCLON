@@ -35,7 +35,18 @@ export const deleteTax = async (id) => {
   return response.data;
 };
 
+export const getCompany = async () => {
+  const response = await apiClient.get('/settings/company');
+  return response.data;
+};
+
+export const updateCompany = async (data) => {
+  const response = await apiClient.put('/settings/company', data);
+  return response.data;
+};
+
 export const settingsApi = {
   getSettings, updateSettings, updateInvoiceSettings,
   getTaxes, createTax, updateTax, deleteTax,
+  getCompany, updateCompany,
 };

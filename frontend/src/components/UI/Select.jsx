@@ -1,10 +1,10 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef } from 'react'
 
 export const Select = forwardRef(function Select(
   { label, error, options = [], placeholder = 'Seleccionar...', className = '', id, ...props },
   ref
 ) {
-  const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+  const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined)
 
   return (
     <div className="w-full">
@@ -38,5 +38,7 @@ export const Select = forwardRef(function Select(
       </select>
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
-  );
-});
+  )
+})
+
+export default Select

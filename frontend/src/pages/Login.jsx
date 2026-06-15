@@ -1,119 +1,109 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { BookOpen, Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { useToast } from '../contexts/ToastContext';
-import { Input } from '../components/UI/Input';
-import { Button } from '../components/UI/Button';
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { useAuth } from '../hooks/useAuth'
+import { useToast } from '../contexts/ToastContext'
+import { Button } from '../components/UI/Button'
+import { Input } from '../components/UI/Input'
 
 export default function Login() {
-  const { login } = useAuth();
-  const { showError } = useToast();
-  const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth()
+  const { showError } = useToast()
+  const navigate = useNavigate()
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({ defaultValues: { email: '', password: '', rememberMe: false } });
+  } = useForm()
 
   const onSubmit = async (data) => {
-    setIsLoading(true);
+    setIsLoading(true)
+    setError('')
     try {
-      await login(data.email, data.password);
-      navigate('/', { replace: true });
+      await login(data)
+      navigate('/dashboard', { replace: true })
     } catch (err) {
-      const msg = err?.response?.data?.message || 'Credenciales incorrectas. Intenta de nuevo.';
-      showError(msg);
+      const msg = err?.response?.data?.message || err?.message || 'Error al iniciar sesión'
+      setError(msg)
+      showError(msg)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-800 to-primary-900 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mb-3">
-            <BookOpen className="w-8 h-8 text-white" />
+    <div className="min-h-screen flex">
+      {/* Left branding panel */}
+      <div className="hidden lg:flex lg:w-1/2 bg-indigo-900 flex-col items-center justify-center p-12">
+        <div className="max-w-sm text-center">
+          <div className="h-16 w-16 rounded-2xl bg-indigo-500 flex items-center justify-center mx-auto mb-6">
+            <span className="text-white font-bold text-3xl">A</span>
           </div>
-          <h1 className="text-3xl font-bold text-white">Alegra</h1>
-          <p className="text-indigo-200 text-sm mt-1">Gestión contable simplificada</p>
+          <h2 className="text-4xl font-bold text-white mb-4">Alegra</h2>
+          <p className="text-indigo-300 text-lg leading-relaxed">
+            Administra tu negocio de forma simple, rápida y eficiente.
+          </p>
+          <div className="mt-10 space-y-3">
+            {['Facturación electrónica', 'Control de inventario', 'Reportes financieros'].map((f) => (
+              <div key={f} className="flex items-center gap-3 text-indigo-200">
+                <div className="h-2 w-2 rounded-full bg-indigo-400" />
+                <span className="text-sm">{f}</span>
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-1">Iniciar Sesión</h2>
-          <p className="text-sm text-gray-500 mb-6">Ingresa tus credenciales para continuar</p>
+      {/* Right form panel */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white">
+        <div className="w-full max-w-sm">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Iniciar sesión</h1>
+            <p className="mt-2 text-gray-500">Bienvenido de vuelta</p>
+          </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <Input
               label="Correo electrónico"
               type="email"
+              placeholder="tu@empresa.com"
               error={errors.email?.message}
               {...register('email', {
                 required: 'El correo es requerido',
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: 'Correo electrónico inválido',
-                },
+                pattern: { value: /^\S+@\S+\.\S+$/, message: 'Correo inválido' },
               })}
-              placeholder="tu@empresa.com"
-              autoComplete="email"
             />
 
-            <div className="relative">
-              <Input
-                label="Contraseña"
-                type={showPassword ? 'text' : 'password'}
-                error={errors.password?.message}
-                {...register('password', {
-                  required: 'La contraseña es requerida',
-                  minLength: { value: 6, message: 'Mínimo 6 caracteres' },
-                })}
-                placeholder="••••••••"
-                autoComplete="current-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-8 text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+            <Input
+              label="Contraseña"
+              type="password"
+              placeholder="••••••••"
+              error={errors.password?.message}
+              {...register('password', { required: 'La contraseña es requerida' })}
+            />
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                  {...register('rememberMe')}
-                />
-                <span className="text-sm text-gray-600">Recordarme</span>
-              </label>
-              <a href="#" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-                ¿Olvidaste tu contraseña?
-              </a>
-            </div>
+            {error && (
+              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
 
-            <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
-              Iniciar Sesión
+            <Button type="submit" variant="primary" size="lg" isLoading={isLoading} className="w-full">
+              Iniciar sesión
             </Button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
+          <p className="mt-6 text-center text-sm text-gray-500">
             ¿No tienes cuenta?{' '}
-            <Link to="/register" className="text-indigo-600 hover:text-indigo-700 font-medium">
+            <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
               Regístrate gratis
             </Link>
           </p>
         </div>
       </div>
     </div>
-  );
+  )
 }

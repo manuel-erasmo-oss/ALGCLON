@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { LoadingSpinner } from './UI/LoadingSpinner'
+import LoadingSpinner from './UI/LoadingSpinner'
 
 export default function ProtectedRoute({ children }) {
   const { user, isLoading } = useAuth()

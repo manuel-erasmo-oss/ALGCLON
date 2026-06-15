@@ -1,158 +1,95 @@
-import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard,
   FileText,
   Users,
   Package,
   Landmark,
-  BarChart3,
+  BarChart2,
   Settings,
-  ChevronDown,
-  ChevronRight,
-  ShoppingCart,
-  BookOpen,
-  Receipt,
-  UserCheck,
-  ClipboardList,
-} from 'lucide-react';
+} from 'lucide-react'
 
-const navigation = [
+const navSections = [
   {
-    name: 'Dashboard',
-    href: '/',
-    icon: LayoutDashboard,
-  },
-  {
-    name: 'Ventas',
-    icon: Receipt,
-    children: [
-      { name: 'Facturas', href: '/invoices', icon: FileText },
-      { name: 'Cotizaciones', href: '/invoices?type=quote', icon: ClipboardList },
-      { name: 'Clientes', href: '/contacts?type=client', icon: UserCheck },
+    items: [
+      { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
     ],
   },
   {
-    name: 'Compras',
-    href: '/purchases',
-    icon: ShoppingCart,
+    title: 'Ventas',
+    items: [
+      { label: 'Facturas', icon: FileText, to: '/invoices' },
+      { label: 'Contactos', icon: Users, to: '/contacts' },
+    ],
   },
   {
-    name: 'Productos',
-    href: '/products',
-    icon: Package,
+    title: 'Inventario',
+    items: [
+      { label: 'Productos', icon: Package, to: '/products' },
+    ],
   },
   {
-    name: 'Bancos',
-    href: '/banks',
-    icon: Landmark,
+    title: 'Tesorería',
+    items: [
+      { label: 'Bancos', icon: Landmark, to: '/banks' },
+    ],
   },
   {
-    name: 'Contactos',
-    href: '/contacts',
-    icon: Users,
+    title: 'Reportes',
+    items: [
+      { label: 'Reportes', icon: BarChart2, to: '/reports' },
+    ],
   },
   {
-    name: 'Contabilidad',
-    href: '/accounting',
-    icon: BookOpen,
+    title: 'Config',
+    items: [
+      { label: 'Configuración', icon: Settings, to: '/settings' },
+    ],
   },
-  {
-    name: 'Reportes',
-    href: '/reports',
-    icon: BarChart3,
-  },
-  {
-    name: 'Configuración',
-    href: '/settings',
-    icon: Settings,
-  },
-];
+]
 
-function SidebarItem({ item }) {
-  const location = useLocation();
-  const [open, setOpen] = useState(() => {
-    if (item.children) {
-      return item.children.some((child) => location.pathname === child.href.split('?')[0]);
-    }
-    return false;
-  });
-
-  if (item.children) {
-    const isActive = item.children.some(
-      (child) => location.pathname === child.href.split('?')[0]
-    );
-
-    return (
-      <div>
-        <button
-          onClick={() => setOpen(!open)}
-          className={`sidebar-item w-full ${isActive ? 'sidebar-item-active' : 'sidebar-item-inactive'}`}
-        >
-          <item.icon className="w-5 h-5 shrink-0" />
-          <span className="flex-1 text-left">{item.name}</span>
-          {open ? (
-            <ChevronDown className="w-4 h-4" />
-          ) : (
-            <ChevronRight className="w-4 h-4" />
-          )}
-        </button>
-        {open && (
-          <div className="ml-4 mt-1 space-y-0.5 pl-4 border-l border-white/20">
-            {item.children.map((child) => (
-              <NavLink
-                key={child.href}
-                to={child.href}
-                className={({ isActive: navActive }) =>
-                  `sidebar-item ${navActive ? 'sidebar-item-active' : 'sidebar-item-inactive'}`
-                }
-              >
-                <child.icon className="w-4 h-4 shrink-0" />
-                <span>{child.name}</span>
-              </NavLink>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
+export default function Sidebar() {
   return (
-    <NavLink
-      to={item.href}
-      end={item.href === '/'}
-      className={({ isActive }) =>
-        `sidebar-item ${isActive ? 'sidebar-item-active' : 'sidebar-item-inactive'}`
-      }
-    >
-      <item.icon className="w-5 h-5 shrink-0" />
-      <span>{item.name}</span>
-    </NavLink>
-  );
-}
-
-export function Sidebar() {
-  return (
-    <aside className="w-64 min-h-screen bg-primary-900 flex flex-col shrink-0">
+    <aside className="w-64 min-h-screen bg-indigo-900 flex flex-col flex-shrink-0">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-white/10">
-        <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-          <BookOpen className="w-5 h-5 text-white" />
+      <div className="flex items-center gap-3 px-6 py-5 border-b border-indigo-800">
+        <div className="h-8 w-8 rounded-lg bg-indigo-500 flex items-center justify-center">
+          <span className="text-white font-bold text-sm">A</span>
         </div>
-        <span className="text-white text-xl font-bold tracking-tight">Alegra</span>
+        <span className="text-white font-semibold text-lg">Alegra</span>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto scrollbar-thin">
-        {navigation.map((item) => (
-          <SidebarItem key={item.name} item={item} />
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto py-4 px-3">
+        {navSections.map((section, idx) => (
+          <div key={idx} className={idx > 0 ? 'mt-6' : ''}>
+            {section.title && (
+              <p className="px-3 mb-1 text-xs font-semibold text-indigo-400 uppercase tracking-wider">
+                {section.title}
+              </p>
+            )}
+            <ul className="space-y-0.5">
+              {section.items.map((item) => (
+                <li key={item.to}>
+                  <NavLink
+                    to={item.to}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-indigo-700 text-white'
+                          : 'text-indigo-200 hover:bg-indigo-800 hover:text-white'
+                      }`
+                    }
+                  >
+                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                    {item.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </div>
         ))}
       </nav>
-
-      {/* Footer */}
-      <div className="px-4 py-4 border-t border-white/10">
-        <p className="text-indigo-300 text-xs text-center">© 2024 Alegra Clone</p>
-      </div>
     </aside>
-  );
+  )
 }

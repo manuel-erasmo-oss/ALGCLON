@@ -1,5 +1,5 @@
-import React from 'react';
-import { Loader2 } from 'lucide-react';
+import React from 'react'
+import { Loader2 } from 'lucide-react'
 
 const variantClasses = {
   primary: 'bg-indigo-600 hover:bg-indigo-700 text-white border-transparent shadow-sm',
@@ -7,13 +7,13 @@ const variantClasses = {
   danger: 'bg-red-600 hover:bg-red-700 text-white border-transparent shadow-sm',
   ghost: 'bg-transparent hover:bg-gray-100 text-gray-700 border-transparent',
   outline: 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300 shadow-sm',
-};
+}
 
 const sizeClasses = {
   sm: 'px-3 py-1.5 text-xs',
   md: 'px-4 py-2 text-sm',
   lg: 'px-5 py-2.5 text-base',
-};
+}
 
 export function Button({
   children,
@@ -44,5 +44,7 @@ export function Button({
       {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
       {children}
     </button>
-  );
+  )
 }
+
+export default Button

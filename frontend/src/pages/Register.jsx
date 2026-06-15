@@ -1,150 +1,125 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { BookOpen, Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { useToast } from '../contexts/ToastContext';
-import { Input } from '../components/UI/Input';
-import { Button } from '../components/UI/Button';
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { useAuth } from '../hooks/useAuth'
+import { useToast } from '../contexts/ToastContext'
+import { Button } from '../components/UI/Button'
+import { Input } from '../components/UI/Input'
 
 export default function Register() {
-  const { register: authRegister } = useAuth();
-  const { showError, showSuccess } = useToast();
-  const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { register: registerUser } = useAuth()
+  const { showError } = useToast()
+  const navigate = useNavigate()
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
-  } = useForm();
-
-  const password = watch('password');
+  } = useForm()
 
   const onSubmit = async (data) => {
-    setIsLoading(true);
+    setIsLoading(true)
+    setError('')
     try {
-      const { confirmPassword, ...rest } = data;
-      await authRegister(rest);
-      showSuccess('Cuenta creada exitosamente');
-      navigate('/', { replace: true });
+      await registerUser(data)
+      navigate('/dashboard', { replace: true })
     } catch (err) {
-      const msg = err?.response?.data?.message || 'Error al registrar. Intenta de nuevo.';
-      showError(msg);
+      const msg = err?.response?.data?.message || err?.message || 'Error al registrarse'
+      setError(msg)
+      showError(msg)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-800 to-primary-900 flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-6">
-          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mb-3">
-            <BookOpen className="w-8 h-8 text-white" />
+    <div className="min-h-screen flex">
+      {/* Left branding panel */}
+      <div className="hidden lg:flex lg:w-1/2 bg-indigo-900 flex-col items-center justify-center p-12">
+        <div className="max-w-sm text-center">
+          <div className="h-16 w-16 rounded-2xl bg-indigo-500 flex items-center justify-center mx-auto mb-6">
+            <span className="text-white font-bold text-3xl">A</span>
           </div>
-          <h1 className="text-3xl font-bold text-white">Alegra</h1>
-          <p className="text-indigo-200 text-sm mt-1">Gestión contable simplificada</p>
+          <h2 className="text-4xl font-bold text-white mb-4">Alegra</h2>
+          <p className="text-indigo-300 text-lg leading-relaxed">
+            Comienza gratis hoy. Sin tarjeta de crédito requerida.
+          </p>
         </div>
+      </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-1">Crear Cuenta</h2>
-          <p className="text-sm text-gray-500 mb-6">Completa tus datos para comenzar</p>
+      {/* Right form panel */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white overflow-y-auto">
+        <div className="w-full max-w-sm">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Crear cuenta</h1>
+            <p className="mt-2 text-gray-500">Ingresa los datos de tu empresa</p>
+          </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input
-              label="Nombre de la empresa *"
-              error={errors.companyName?.message}
-              {...register('companyName', { required: 'El nombre de empresa es requerido' })}
-              placeholder="Mi Empresa S.A.S"
+              label="Nombre de empresa"
+              placeholder="Mi Empresa S.A.S."
+              error={errors.company_name?.message}
+              {...register('company_name', { required: 'El nombre de empresa es requerido' })}
             />
 
             <Input
-              label="NIT / Identificación *"
+              label="NIT"
+              placeholder="900123456-7"
               error={errors.nit?.message}
               {...register('nit', { required: 'El NIT es requerido' })}
-              placeholder="900123456-1"
             />
 
             <Input
-              label="Nombre completo *"
+              label="Tu nombre"
+              placeholder="Juan Pérez"
               error={errors.name?.message}
               {...register('name', { required: 'El nombre es requerido' })}
-              placeholder="Juan García"
             />
 
             <Input
-              label="Correo electrónico *"
+              label="Correo electrónico"
               type="email"
+              placeholder="tu@empresa.com"
               error={errors.email?.message}
               {...register('email', {
                 required: 'El correo es requerido',
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: 'Correo electrónico inválido',
-                },
+                pattern: { value: /^\S+@\S+\.\S+$/, message: 'Correo inválido' },
               })}
-              placeholder="tu@empresa.com"
             />
 
-            <div className="relative">
-              <Input
-                label="Contraseña *"
-                type={showPassword ? 'text' : 'password'}
-                error={errors.password?.message}
-                {...register('password', {
-                  required: 'La contraseña es requerida',
-                  minLength: { value: 8, message: 'Mínimo 8 caracteres' },
-                })}
-                placeholder="••••••••"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-8 text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+            <Input
+              label="Contraseña"
+              type="password"
+              placeholder="••••••••"
+              error={errors.password?.message}
+              {...register('password', {
+                required: 'La contraseña es requerida',
+                minLength: { value: 6, message: 'Mínimo 6 caracteres' },
+              })}
+            />
 
-            <div className="relative">
-              <Input
-                label="Confirmar contraseña *"
-                type={showConfirm ? 'text' : 'password'}
-                error={errors.confirmPassword?.message}
-                {...register('confirmPassword', {
-                  required: 'Confirma tu contraseña',
-                  validate: (value) => value === password || 'Las contraseñas no coinciden',
-                })}
-                placeholder="••••••••"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute right-3 top-8 text-gray-400 hover:text-gray-600"
-              >
-                {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+            {error && (
+              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
 
-            <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
-              Crear Cuenta
+            <Button type="submit" variant="primary" size="lg" isLoading={isLoading} className="w-full">
+              Crear cuenta
             </Button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
+          <p className="mt-6 text-center text-sm text-gray-500">
             ¿Ya tienes cuenta?{' '}
-            <Link to="/login" className="text-indigo-600 hover:text-indigo-700 font-medium">
+            <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
               Inicia sesión
             </Link>
           </p>
         </div>
       </div>
     </div>
-  );
+  )
 }
