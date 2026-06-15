@@ -1,19 +1,19 @@
-import React, { useEffect } from 'react';
-import { X } from 'lucide-react';
+import React, { useEffect } from 'react'
+import { X } from 'lucide-react'
 
 export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden'
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = ''
     }
     return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   const sizeClasses = {
     sm: 'max-w-sm',
@@ -21,7 +21,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
     full: 'max-w-6xl',
-  };
+  }
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -49,5 +49,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
         </div>
       </div>
     </div>
-  );
+  )
 }
+
+export default Modal
