@@ -1,177 +1,168 @@
-import React from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Mail, Phone, MapPin, User, FileText } from 'lucide-react';
-import { getContact } from '../../api/contacts';
-import { getInvoices } from '../../api/invoices';
-import { Badge } from '../../components/UI/Badge';
-import { Card } from '../../components/UI/Card';
-import { LoadingSpinner } from '../../components/UI/LoadingSpinner';
-import { Table } from '../../components/UI/Table';
+import { useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
+import { ArrowLeft, Edit, Mail, Phone, MapPin, Building2 } from 'lucide-react'
+import { getContact, updateContact } from '../../api/contacts'
+import { getInvoices } from '../../api/invoices'
+import { useToast } from '../../contexts/ToastContext'
+import Card from '../../components/UI/Card'
+import Badge from '../../components/UI/Badge'
+import Table from '../../components/UI/Table'
+import { Modal } from '../../components/UI/Modal'
+import { Button } from '../../components/UI/Button'
+import { Input } from '../../components/UI/Input'
+import { Select } from '../../components/UI/Select'
+import LoadingSpinner from '../../components/UI/LoadingSpinner'
+import { formatCOP, formatDate } from '../../utils/format'
 
-const formatCurrency = (amount) =>
-  new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-  }).format(amount || 0);
+const TYPE_OPTIONS = [
+  { value: 'customer', label: 'Cliente' },
+  { value: 'supplier', label: 'Proveedor' },
+]
 
-const formatDate = (date) => {
-  if (!date) return '';
-  return new Date(date).toLocaleDateString('es-CO', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-};
+const STATUS_VARIANTS = {
+  DRAFT: 'default', SENT: 'info', PAID: 'success', OVERDUE: 'danger', CANCELLED: 'default',
+}
+const STATUS_LABELS = {
+  DRAFT: 'Borrador', SENT: 'Enviada', PAID: 'Pagada', OVERDUE: 'Vencida', CANCELLED: 'Cancelada',
+}
 
 export default function ContactDetail() {
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const { showSuccess, showError } = useToast()
+  const [editOpen, setEditOpen] = useState(false)
 
   const { data: contact, isLoading } = useQuery({
-    queryKey: ['contacts', id],
+    queryKey: ['contact', id],
     queryFn: () => getContact(id),
-  });
+  })
 
-  const { data: invoicesData } = useQuery({
+  const { data: invoicesData, isLoading: invoicesLoading } = useQuery({
     queryKey: ['invoices', { contactId: id }],
     queryFn: () => getInvoices({ contactId: id }),
-    enabled: !!id,
-  });
+  })
 
-  const invoices = invoicesData?.data || invoicesData || [];
+  const invoices = invoicesData?.data || invoicesData?.invoices || invoicesData || []
 
-  if (isLoading) return <LoadingSpinner overlay />;
+  const { register, handleSubmit, reset, formState: { errors } } = useForm()
 
-  if (!contact) {
-    return (
-      <div className="text-center py-16">
-        <p className="text-gray-500">Contacto no encontrado</p>
-        <Link to="/contacts" className="text-indigo-600 hover:underline mt-2 block">
-          Volver a contactos
-        </Link>
-      </div>
-    );
+  const updateMutation = useMutation({
+    mutationFn: (data) => updateContact(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contact', id] })
+      queryClient.invalidateQueries({ queryKey: ['contacts'] })
+      showSuccess('Contacto actualizado')
+      setEditOpen(false)
+    },
+    onError: (e) => showError(e?.response?.data?.message || 'Error al actualizar'),
+  })
+
+  const openEdit = () => {
+    if (contact) {
+      reset({
+        name: contact.name,
+        email: contact.email,
+        phone: contact.phone,
+        nit: contact.nit,
+        type: contact.type,
+        address: contact.address,
+      })
+    }
+    setEditOpen(true)
   }
 
   const invoiceColumns = [
-    {
-      key: 'number',
-      header: '#',
-      render: (val, row) => (
-        <Link to={`/invoices/${row.id}`} className="text-indigo-600 font-medium hover:underline">
-          #{val || row.id}
-        </Link>
-      ),
-    },
-    { key: 'date', header: 'Fecha', render: (val) => formatDate(val) },
-    { key: 'dueDate', header: 'Vencimiento', render: (val) => formatDate(val) },
-    {
-      key: 'total',
-      header: 'Total',
-      render: (val) => <span className="font-medium">{formatCurrency(val)}</span>,
-    },
+    { key: 'number', label: '# Factura', render: (v) => v || '-' },
+    { key: 'issue_date', label: 'Fecha', render: (v) => formatDate(v) },
+    { key: 'due_date', label: 'Vencimiento', render: (v) => formatDate(v) },
+    { key: 'total', label: 'Total', render: (v) => formatCOP(v) },
     {
       key: 'status',
-      header: 'Estado',
-      render: (val) => <Badge variant={val}>{val}</Badge>,
+      label: 'Estado',
+      render: (v) => <Badge variant={STATUS_VARIANTS[v] || 'default'}>{STATUS_LABELS[v] || v}</Badge>,
     },
-  ];
+  ]
 
-  const typeLabels = { client: 'Cliente', supplier: 'Proveedor', both: 'Cliente y Proveedor' };
+  if (isLoading) {
+    return <div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div>
+  }
+
+  if (!contact) {
+    return <div className="text-center py-20 text-gray-500">Contacto no encontrado</div>
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Back */}
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Volver a Contactos
-      </button>
+    <div className="space-y-6 max-w-4xl">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/contacts')}>
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Volver
+        </Button>
+        <Button variant="outline" size="sm" onClick={openEdit}>
+          <Edit className="h-4 w-4 mr-1" />
+          Editar
+        </Button>
+      </div>
 
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center text-2xl font-bold text-indigo-600">
-            {contact.name?.[0]?.toUpperCase() || 'C'}
-          </div>
+      <Card>
+        <div className="flex items-start justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{contact.name}</h2>
-            <div className="flex items-center gap-2 mt-1">
-              {contact.identificationType && (
-                <span className="text-sm text-gray-500">
-                  {contact.identificationType}: {contact.identificationNumber || '—'}
-                </span>
-              )}
-              {contact.type && (
-                <Badge variant={contact.type === 'client' ? 'blue' : 'green'}>
-                  {typeLabels[contact.type] || contact.type}
-                </Badge>
-              )}
-            </div>
+            <Badge variant={contact.type === 'customer' ? 'info' : 'warning'} className="mt-1">
+              {contact.type === 'customer' ? 'Cliente' : 'Proveedor'}
+            </Badge>
           </div>
         </div>
-        <Link to={`/invoices/new?contactId=${contact.id}`}>
-          <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
-            <FileText className="w-4 h-4" />
-            Nueva Factura
-          </button>
-        </Link>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Contact Info */}
-        <Card title="Información de Contacto" className="lg:col-span-1">
-          <dl className="space-y-4">
-            {contact.email && (
-              <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-gray-400 shrink-0" />
-                <div>
-                  <dt className="text-xs text-gray-400">Email</dt>
-                  <dd className="text-sm text-gray-900">{contact.email}</dd>
-                </div>
-              </div>
-            )}
-            {contact.phone && (
-              <div className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-gray-400 shrink-0" />
-                <div>
-                  <dt className="text-xs text-gray-400">Teléfono</dt>
-                  <dd className="text-sm text-gray-900">{contact.phone}</dd>
-                </div>
-              </div>
-            )}
-            {contact.address && (
-              <div className="flex items-center gap-3">
-                <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
-                <div>
-                  <dt className="text-xs text-gray-400">Dirección</dt>
-                  <dd className="text-sm text-gray-900">{contact.address}</dd>
-                  {contact.city && <dd className="text-sm text-gray-500">{contact.city}</dd>}
-                </div>
-              </div>
-            )}
-            {contact.notes && (
-              <div className="pt-3 border-t border-gray-100">
-                <dt className="text-xs text-gray-400 mb-1">Notas</dt>
-                <dd className="text-sm text-gray-700">{contact.notes}</dd>
-              </div>
-            )}
-          </dl>
-        </Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {contact.nit && (
+            <div className="flex items-center gap-3 text-sm text-gray-600">
+              <Building2 className="h-4 w-4 text-gray-400 flex-shrink-0" />
+              <span><span className="font-medium">NIT:</span> {contact.nit}</span>
+            </div>
+          )}
+          {contact.email && (
+            <div className="flex items-center gap-3 text-sm text-gray-600">
+              <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
+              <span>{contact.email}</span>
+            </div>
+          )}
+          {contact.phone && (
+            <div className="flex items-center gap-3 text-sm text-gray-600">
+              <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
+              <span>{contact.phone}</span>
+            </div>
+          )}
+          {contact.address && (
+            <div className="flex items-center gap-3 text-sm text-gray-600">
+              <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
+              <span>{contact.address}</span>
+            </div>
+          )}
+        </div>
+      </Card>
 
-        {/* Invoice History */}
-        <Card title="Historial de Facturas" className="lg:col-span-2">
-          <Table
-            columns={invoiceColumns}
-            data={Array.isArray(invoices) ? invoices : []}
-            emptyMessage="Sin facturas registradas"
-          />
-        </Card>
-      </div>
+      <Card title="Historial de facturas">
+        <Table columns={invoiceColumns} data={Array.isArray(invoices) ? invoices : []} loading={invoicesLoading} />
+      </Card>
+
+      <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Editar Contacto" size="md">
+        <form onSubmit={handleSubmit((d) => updateMutation.mutate(d))} className="space-y-4">
+          <Input label="Nombre *" error={errors.name?.message} {...register('name', { required: 'Requerido' })} />
+          <Input label="NIT / CC" {...register('nit')} />
+          <Input label="Email" type="email" {...register('email')} />
+          <Input label="Teléfono" {...register('phone')} />
+          <Select label="Tipo *" options={TYPE_OPTIONS} placeholder="Seleccionar tipo" error={errors.type?.message} {...register('type', { required: 'Requerido' })} />
+          <Input label="Dirección" {...register('address')} />
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="secondary" onClick={() => setEditOpen(false)}>Cancelar</Button>
+            <Button type="submit" variant="primary" isLoading={updateMutation.isPending}>Actualizar</Button>
+          </div>
+        </form>
+      </Modal>
     </div>
-  );
+  )
 }
